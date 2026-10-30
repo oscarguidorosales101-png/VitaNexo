@@ -1,0 +1,35 @@
+# =============================================================================
+# VitaNexo — Configuración Docker Compose opcional para n8n Local
+# Expone n8n ÚNICAMENTE en loopback local (127.0.0.1:5678), nunca a Internet.
+# Almacenamiento persistente para conservar credenciales y workflows al reiniciar.
+# =============================================================================
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: vitanexo-n8n-local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      - N8N_HOST=127.0.0.1
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_LISTEN_ADDRESS=0.0.0.0
+      - WEBHOOK_URL=http://127.0.0.1:5678/
+      - GENERIC_TIMEZONE=America/Costa_Rica
+      - TZ=America/Costa_Rica
+      - N8N_SECURE_COOKIE=false
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      - N8N_WEBHOOK_SECRET=${N8N_WEBHOOK_SECRET}
+      - GEMINI_MODEL=${GEMINI_MODEL:-models/gemini-3-flash-preview}
+    volumes:
+      - vitanexo_n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+
+volumes:
+  vitanexo_n8n_data:
+    name: vitanexo_n8n_data
+

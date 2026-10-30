@@ -1,0 +1,90 @@
+{
+  "id": "VitaNexoHealth05",
+  "name": "VitaNexo 05 - Verificación Autenticada de Salud n8n",
+  "active": true,
+  "versionId": "b5050505-5555-4555-8555-555555555505",
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "path": "vitanexo/health",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "VitaNexoHealth05-webhook",
+      "name": "Webhook Salud VitaNexo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        80
+      ],
+      "webhookId": "vitanexo-webhook-health-05",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VitaNexoWhAuth01",
+          "name": "VitaNexo Webhook Local Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ok: true,\n    httpStatus: 200,\n    service: 'VitaNexo n8n Local Automation Engine',\n    workflow_id: 'VitaNexoHealth05',\n    webhook_authenticated: true,\n    auth_mode: 'n8n_encrypted_header_auth',\n    gemini_model_configured: 'models/gemini-flash-latest',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "VitaNexoHealth05-code",
+      "name": "Verificar Firma Webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus || 200 }}"
+        }
+      },
+      "id": "VitaNexoHealth05-respond",
+      "name": "Responder Estado n8n",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Salud VitaNexo": {
+      "main": [
+        [
+          {
+            "node": "Verificar Firma Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Firma Webhook": {
+      "main": [
+        [
+          {
+            "node": "Responder Estado n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

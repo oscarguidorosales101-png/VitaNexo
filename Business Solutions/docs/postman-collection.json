@@ -1,0 +1,200 @@
+{
+  "info": {
+    "name": "VitaNexo Backend API (VitaBase)",
+    "description": "Colección de pruebas REST para los módulos comerciales, métricas SQL y orquestador de agentes deterministas de VitaNexo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Salud y Conexión",
+      "item": [
+        {
+          "name": "Estado de API y MySQL VitaBase",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Clientes y Servicios",
+      "item": [
+        {
+          "name": "Listar Clientes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clientes"
+          }
+        },
+        {
+          "name": "Crear Cliente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_comercial\": \"Centro Fisioterapia Valle Azul\",\n  \"razon_social\": \"Valle Azul Terapia S.A.\",\n  \"cedula_juridica\": \"3-101-959595\",\n  \"tipo_organizacion_id\": 3,\n  \"provincia\": \"Cartago\",\n  \"canton\": \"Cartago\",\n  \"correo_corporativo\": \"admin@valleazul.cr.example\",\n  \"telefono_principal\": \"+506 2551-9595\"\n}"
+            },
+            "url": "{{baseUrl}}/clientes"
+          }
+        },
+        {
+          "name": "Listar Catálogo de Servicios",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/servicios"
+          }
+        },
+        {
+          "name": "Listar Contratos de Servicios",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/contratos-servicios"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Campañas, Canales y Contenidos",
+      "item": [
+        {
+          "name": "Listar Canales",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/canales"
+          }
+        },
+        {
+          "name": "Listar Campañas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/campanas"
+          }
+        },
+        {
+          "name": "Calendario Editorial de Contenidos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/contenidos"
+          }
+        },
+        {
+          "name": "Aprobar Contenido en Revisión",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"revisor_id\": 4,\n  \"decision\": \"aprobar\",\n  \"comentarios\": \"Contenido validado por dirección comercial.\"\n}"
+            },
+            "url": "{{baseUrl}}/contenidos/8/revisiones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Contactos, Embudo, Traspasos y Oportunidades",
+      "item": [
+        {
+          "name": "Etapas del Embudo",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/embudo/etapas"
+          }
+        },
+        {
+          "name": "Listar Contactos / Leads",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/contactos"
+          }
+        },
+        {
+          "name": "Seguimientos Pendientes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/contactos/seguimientos-pendientes"
+          }
+        },
+        {
+          "name": "Listar Traspasos a Ventas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/traspasos-ventas"
+          }
+        },
+        {
+          "name": "Listar Oportunidades",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/oportunidades"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Indicadores SQL de Negocio",
+      "item": [
+        { "name": "CPC (Costo por Clic)", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/cpc" } },
+        { "name": "CTR (Tasa de Clics)", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/ctr" } },
+        { "name": "CAC (Costo de Adquisición)", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/cac" } },
+        { "name": "ROAS (Retorno Publicitario)", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/roas" } },
+        { "name": "Conversiones entre Etapas", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/conversiones-embudo" } },
+        { "name": "Ciclo de Venta", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/ciclo-venta" } },
+        { "name": "Ticket Promedio", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/ticket-promedio" } },
+        { "name": "Vanidad vs Negocio", "request": { "method": "GET", "url": "{{baseUrl}}/metricas/indicadores/vanidad-vs-negocio" } }
+      ]
+    },
+    {
+      "name": "6. Orquestador Central y Agentes",
+      "item": [
+        {
+          "name": "Capacidades de Agentes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/agentes/capacidades"
+          }
+        },
+        {
+          "name": "Ejecutar Agente 1 (Proponer Campaña)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_tarea\": \"proponer_campana\",\n  \"parametros\": {\n    \"nombre\": \"Propuesta Automatización Recepción Heredia\",\n    \"descripcion\": \"Búsqueda pagada para consultorios médicos en Heredia.\",\n    \"objetivo\": \"Lograr 12 demostraciones agendadas.\",\n    \"etapa_recorrido\": \"decision\",\n    \"canal_principal_id\": 1,\n    \"fecha_inicio\": \"2026-06-01\",\n    \"fecha_fin\": \"2026-07-15\",\n    \"presupuesto_total_crc\": 240000,\n    \"justificacion_presupuesto\": \"Alta intención comercial en búsquedas locales.\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/orquestador/ejecutar"
+          }
+        },
+        {
+          "name": "Ejecutar Agente 3 (Diagnóstico Integral de Métricas)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_tarea\": \"diagnosticar_indicadores_integrales\",\n  \"parametros\": {}\n}"
+            },
+            "url": "{{baseUrl}}/orquestador/ejecutar"
+          }
+        },
+        {
+          "name": "Historial de Ejecuciones de Agentes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/agentes/ejecuciones"
+          }
+        }
+      ]
+    }
+  ]
+}
+

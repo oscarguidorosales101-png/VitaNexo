@@ -1,0 +1,231 @@
+{
+  "id": "VitaNexoAgCamp01",
+  "name": "VitaNexo 01 - Agente IA de Campañas y Presupuestos (Gemini)",
+  "active": true,
+  "versionId": "b1010101-1111-4111-8111-111111111101",
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "path": "vitanexo/agente-campanas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "VitaNexoAgCamp01-node-webhook",
+      "name": "Webhook Orquestador VitaNexo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        120
+      ],
+      "webhookId": "vitanexo-webhook-campanas-01",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VitaNexoWhAuth01",
+          "name": "VitaNexo Webhook Local Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json || {};\nconst body = item.body && typeof item.body === 'object' ? item.body : item;\n\nconst codigoEjecucion = String(body.codigo_ejecucion || '').trim();\nconst codigoAgente = String(body.codigo_agente || '').trim();\nconst tipoTarea = String(body.tipo_tarea || '').trim();\nconst mensajeUsuario = String(body.mensaje_usuario || '').trim();\nconst historialConversacion = Array.isArray(body.historial_conversacion) ? body.historial_conversacion : [];\nconst contexto = body.contexto && typeof body.contexto === 'object' ? body.contexto : {};\nconst parametros = body.parametros && typeof body.parametros === 'object' ? body.parametros : {};\nconst modeloSolicitado = String(body.modelo_ia || 'models/gemini-flash-latest').trim();\n\nif (!codigoEjecucion || !tipoTarea || codigoAgente !== 'agente_campanas') {\n  return [{\n    json: {\n      permitir_ejecucion: false,\n      ok: false,\n      httpStatus: 400,\n      error_code: 'INVALID_WEBHOOK_PAYLOAD',\n      error: 'Payload inválido o agente no coincidente para agente_campanas.'\n    }\n  }];\n}\n\n// Evaluación contextual de frontera administrativa vs actividad clínica prohibida\nconst rawToCheck = JSON.stringify({ mensajeUsuario, parametros })\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '')\n  .toLowerCase();\n\nconst negatedAdminContext = /\\b(sin|no\\s+incluir|no\\s+maneja|no\\s+almacena|excluir|evitar)\\s+(datos\\s+clinicos|expediente\\s+clinico|historia\\s+clinica|historial\\s+clinico|diagnostico\\s+medico)\\b/i.test(rawToCheck);\n\nconst affirmativeClinicalAction = /\\b(incluir\\s+expediente\\s+clinico|diagnosticar\\s+paciente|emitir\\s+diagnostico\\s+medico|recetar\\s+medicamento|prescribir\\s+tratamiento\\s+clinico|guardar\\s+historia\\s+clinica\\s+del\\s+paciente|expediente\\s+clinico\\s+y\\s+diagnostico\\s+medico)\\b/i.test(rawToCheck);\n\nif (!negatedAdminContext && affirmativeClinicalAction) {\n  return [{\n    json: {\n      permitir_ejecucion: false,\n      ok: false,\n      httpStatus: 422,\n      error_code: 'CLINICAL_DATA_PROHIBITED',\n      error: 'Fuera de alcance clínico: VitaNexo gestiona operaciones administrativas, comerciales y tecnológicas para clínicas, sin emitir diagnósticos médicos ni almacenar expedientes clínicos de pacientes.'\n    }\n  }];\n}\n\nconst promptSections = [\n  '=== SOLICITUD EMPRESARIAL ORQUESTADA DE VITANEXO (COSTA RICA) ===',\n  'Código de ejecución: ' + codigoEjecucion,\n  'Agente especializado: ' + codigoAgente,\n  'Tarea solicitada: ' + tipoTarea,\n  'Moneda oficial: CRC (colones costarricenses)',\n  'Alcance permitido: Gestión administrativa, comercial, agendas, recepción, mercadeo, CRM, métricas SQL y servicios tecnológicos B2B para clínicas pequeñas, consultorios médicos y centros de fisioterapia en Costa Rica. Prohibido emitir diagnósticos médicos, indicar tratamientos clínicos o inventar datos no presentes en VitaBase.'\n];\n\nif (mensajeUsuario) {\n  promptSections.push('', '=== SOLICITUD EN LENGUAJE NATURAL DEL COLABORADOR ===', mensajeUsuario);\n}\n\nif (historialConversacion.length > 0) {\n  promptSections.push('', '=== CONTEXTO RECIENTE DE LA CONVERSACIÓN ===', JSON.stringify(historialConversacion.slice(-5), null, 2));\n}\n\npromptSections.push(\n  '',\n  '=== PARÁMETROS OPERATIVOS ===',\n  JSON.stringify(parametros, null, 2),\n  '',\n  '=== DATOS REALES CONSULTADOS EN MYSQL VITABASE ===',\n  JSON.stringify(contexto, null, 2),\n  '',\n  'INSTRUCCIÓN DE FORMATO OBLIGATORIA:',\n  'Responde ÚNICAMENTE con un objeto JSON válido (sin texto suelto fuera del JSON).',\n  'Incluye SIEMPRE la propiedad \"respuesta_conversacional\" (un texto claro, profesional, bien estructurado en español costarricense ejecutivo que responda directamente al colaborador explicando hallazgos, cifras reales y recomendaciones) ADEMÁS de todas las claves requeridas del dominio: respuesta_conversacional, analisis_objetivo, estrategia_recomendada, propuesta_campana, canales_recomendados, distribucion_presupuesto, explicacion_decisiones, restricciones_seguridad.'\n);\n\nreturn [{\n  json: {\n    permitir_ejecucion: true,\n    codigo_ejecucion: codigoEjecucion,\n    codigo_agente: codigoAgente,\n    tipo_tarea: tipoTarea,\n    modelo_ia: modeloSolicitado.startsWith('models/') ? modeloSolicitado : 'models/' + modeloSolicitado,\n    prompt_usuario: promptSections.join('\\n')\n  }\n}];"
+      },
+      "id": "VitaNexoAgCamp01-node-validate",
+      "name": "Validar y Autenticar Webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.permitir_ejecucion }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "VitaNexoAgCamp01-node-if",
+      "name": "Autorizado y Válido",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        480,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt_usuario }}",
+        "options": {
+          "systemMessage": "Eres el Agente Especializado de Campañas B2B de VitaNexo en Costa Rica.\nAyudas al personal de VitaNexo a proponer campañas, analizar objetivos comerciales, recomendar presupuestos en colones (CRC), comparar alternativas, proponer canales y analizar resultados administrativos/comerciales para clínicas pequeñas, consultorios médicos y centros de fisioterapia.\nPuedes hablar sobre servicios administrativos para clínicas (agenda, citas, recordatorios, recepción, facturación electrónica, CRM). PROHIBIDO emitir diagnósticos médicos, indicar tratamientos clínicos o procesar expedientes clínicos de pacientes.\nPROHIBIDO activar pauta real o gastar dinero real: toda campaña queda en estado \"propuesta\" sujeta a aprobación humana.\nUsa únicamente los canales existentes en VitaBase enviados en el contexto y expresa todos los montos en CRC.\nDevuelve SIEMPRE JSON estricto con la estructura:\n{\n  \"respuesta_conversacional\": \"respuesta directa, clara y completa en español para el colaborador\",\n  \"analisis_objetivo\": \"síntesis ejecutiva del objetivo y presupuesto disponible\",\n  \"estrategia_recomendada\": \"enfoque B2B por etapa del recorrido (conciencia, consideracion o decision)\",\n  \"propuesta_campana\": {\n    \"nombre_sugerido\": \"string <= 130 chars\",\n    \"descripcion\": \"string\",\n    \"objetivo\": \"string\",\n    \"etapa_recorrido\": \"conciencia | consideracion | decision\",\n    \"canal_principal_id\": 1,\n    \"presupuesto_sugerido_crc\": 250000,\n    \"justificacion_presupuesto\": \"string\"\n  },\n  \"canales_recomendados\": [{ \"canal_id\": 1, \"nombre\": \"string\", \"clasificacion\": \"organico|pagado\", \"rol_estrategico\": \"string\" }],\n  \"distribucion_presupuesto\": [{ \"canal_id\": 1, \"canal_nombre\": \"string\", \"porcentaje\": 60, \"monto_crc\": 150000, \"racional\": \"string\" }],\n  \"explicacion_decisiones\": [\"razón 1\", \"razón 2\"],\n  \"restricciones_seguridad\": { \"publicidad_activada\": false, \"requiere_aprobacion_humana\": true }\n}"
+        }
+      },
+      "id": "VitaNexoAgCamp01-node-agent",
+      "name": "Agente Gemini (agente_campanas)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        740,
+        20
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.2
+        },
+        "modelName": "models/gemini-flash-latest"
+      },
+      "id": "VitaNexoAgCamp01-node-gemini",
+      "name": "Google Gemini API Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        740,
+        240
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2YWMf9RDxr6gim6h",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawItem = $input.first().json || {};\nconst metaNode = $('Validar y Autenticar Webhook').first().json || {};\n\nif (rawItem.error) {\n  const errDetail = typeof rawItem.error === 'string'\n    ? rawItem.error\n    : (rawItem.error.message || JSON.stringify(rawItem.error));\n  const isRateLimit = /429|quota|rate\\s*limit|resource_exhausted|too\\s*many\\s*requests/i.test(errDetail);\n  return [{\n    json: {\n      ok: false,\n      httpStatus: isRateLimit ? 429 : 502,\n      error_code: isRateLimit ? 'AI_PROVIDER_RATE_LIMIT' : 'AI_PROVIDER_EXECUTION_ERROR',\n      error: 'Error del proveedor externo de IA en n8n: ' + String(errDetail).slice(0, 380)\n    }\n  }];\n}\n\nconst rawText = String(rawItem.output || rawItem.text || (typeof rawItem === 'string' ? rawItem : JSON.stringify(rawItem))).trim();\n\nlet cleaned = rawText;\nconst fencedMatch = cleaned.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);\nif (fencedMatch) {\n  cleaned = fencedMatch[1].trim();\n} else {\n  const firstBrace = cleaned.indexOf('{');\n  const lastBrace = cleaned.lastIndexOf('}');\n  if (firstBrace !== -1 && lastBrace > firstBrace) {\n    cleaned = cleaned.slice(firstBrace, lastBrace + 1);\n  }\n}\n\nlet parsed = null;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (err) {\n  return [{\n    json: {\n      ok: false,\n      httpStatus: 502,\n      error_code: 'INVALID_GEMINI_JSON_OUTPUT',\n      error: 'El proveedor de IA devolvió una respuesta que no cumple el contrato JSON estructurado requerido.',\n      raw_excerpt: rawText.slice(0, 350)\n    }\n  }];\n}\n\nconst requiredKeys = [\"respuesta_conversacional\",\"analisis_objetivo\",\"estrategia_recomendada\",\"propuesta_campana\",\"canales_recomendados\",\"distribucion_presupuesto\",\"explicacion_decisiones\",\"restricciones_seguridad\"];\nconst missing = requiredKeys.filter((k) => parsed[k] === undefined || parsed[k] === null);\nif (missing.length > 0) {\n  return [{\n    json: {\n      ok: false,\n      httpStatus: 502,\n      error_code: 'INCOMPLETE_GEMINI_SCHEMA',\n      error: 'Faltan claves requeridas en la respuesta estructurada de IA: ' + missing.join(', ')\n    }\n  }];\n}\n\nif (!parsed.respuesta_conversacional || typeof parsed.respuesta_conversacional !== 'string') {\n  parsed.respuesta_conversacional = String(\n    parsed.resumen_ejecutivo ||\n    parsed.analisis_objetivo ||\n    parsed.diagnostico_embudo ||\n    (parsed.pieza_principal && parsed.pieza_principal.cuerpo_texto) ||\n    'Análisis completado con éxito a partir de los datos de VitaBase.'\n  );\n}\n\nreturn [{\n  json: {\n    ok: true,\n    httpStatus: 200,\n    workflow_id: 'VitaNexoAgCamp01',\n    workflow_nombre: 'VitaNexo 01 - Agente IA de Campañas y Presupuestos (Gemini)',\n    proveedor_ia: 'gemini-api',\n    modelo_ia: metaNode.modelo_ia || 'models/gemini-flash-latest',\n    codigo_ejecucion: metaNode.codigo_ejecucion,\n    codigo_agente: metaNode.codigo_agente,\n    tipo_tarea: metaNode.tipo_tarea,\n    timestamp: new Date().toISOString(),\n    analisis_ia: parsed\n  }\n}];"
+      },
+      "id": "VitaNexoAgCamp01-node-format",
+      "name": "Validar Contrato JSON Gemini",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus || 200 }}"
+        }
+      },
+      "id": "VitaNexoAgCamp01-node-respond-ok",
+      "name": "Responder Resultado al Backend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1300,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus || 400 }}"
+        }
+      },
+      "id": "VitaNexoAgCamp01-node-respond-err",
+      "name": "Responder Rechazo Seguridad",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        740,
+        380
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Orquestador VitaNexo": {
+      "main": [
+        [
+          {
+            "node": "Validar y Autenticar Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y Autenticar Webhook": {
+      "main": [
+        [
+          {
+            "node": "Autorizado y Válido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Autorizado y Válido": {
+      "main": [
+        [
+          {
+            "node": "Agente Gemini (agente_campanas)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Rechazo Seguridad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini API Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Gemini (agente_campanas)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Gemini (agente_campanas)": {
+      "main": [
+        [
+          {
+            "node": "Validar Contrato JSON Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Contrato JSON Gemini": {
+      "main": [
+        [
+          {
+            "node": "Responder Resultado al Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
